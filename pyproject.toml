@@ -21,6 +21,11 @@ dev = [
     "pytest>=8.3",
     "ruff>=0.8",
 ]
+rag-pilot = [
+    "chromadb==1.5.9",
+    "sentence-transformers==6.2.0",
+    "torch==2.15.0+cpu",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/rag_app"]

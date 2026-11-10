@@ -1,0 +1,63 @@
+[
+  {
+    "question": "When does the library open on Saturday?",
+    "history": [],
+    "expected_chunk_id": "library:0"
+  },
+  {
+    "question": "What materials can I bring to the recycling center?",
+    "history": [],
+    "expected_chunk_id": "library:1"
+  },
+  {
+    "question": "Is the swimming pool open every day?",
+    "history": [],
+    "expected_chunk_id": "library:2"
+  },
+  {
+    "question": "Where can garden plot holders get the key?",
+    "history": [],
+    "expected_chunk_id": "library:3"
+  },
+  {
+    "question": "How often does the Blue bus run on weekdays?",
+    "history": [],
+    "expected_chunk_id": "transport:0"
+  },
+  {
+    "question": "How long is the ferry crossing?",
+    "history": [],
+    "expected_chunk_id": "transport:1"
+  },
+  {
+    "question": "Where is the bicycle repair stand?",
+    "history": [],
+    "expected_chunk_id": "transport:2"
+  },
+  {
+    "question": "And what should I do before drinking the water?",
+    "history": [
+      {"role": "user", "content": "Is there a notice about drinking water?"},
+      {"role": "assistant", "content": "If a boil-water notice is active, boil it for one full minute."}
+    ],
+    "expected_chunk_id": "safety:0"
+  },
+  {
+    "question": "What is the address?",
+    "history": [
+      {"role": "user", "content": "I need to visit the Northbank health clinic."},
+      {"role": "assistant", "content": "Walk-in hours are weekdays from 8:00 to 11:00."}
+    ],
+    "expected_chunk_id": "safety:1"
+  },
+  {
+    "question": "Can I bring my cat there?",
+    "history": [
+      {"role": "user", "content": "Where should residents go during an evacuation?"},
+      {"role": "assistant", "content": "The designated shelter is the lower hall of Rivermouth Town Hall."},
+      {"role": "user", "content": "Is that storm shelter open during an evacuation?"},
+      {"role": "assistant", "content": "Yes, the lower hall of the town hall is the designated shelter."}
+    ],
+    "expected_chunk_id": "safety:2"
+  }
+]

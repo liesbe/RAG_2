@@ -2,9 +2,9 @@
 
 Instructies voor AI-agents die aan dit project werken. Lees dit bestand volledig voordat je code schrijft of wijzigt.
 
-Het einddoel is een **RAG-assistent** in Python met Streamlit. We bouwen die in twee fasen. **Fase 1 is nu actief**; de RAG-onderdelen hieronder zijn het doel voor fase 2 en mogen pas worden gebouwd als dat expliciet is gestart.
+Het einddoel is een **RAG-assistent** in Python met Streamlit. We bouwen die in twee fasen. **Fase 2 is gestart voor de concretisering en kleine proef (stappen 1 en 2)**; de volledige RAG-app en overige stappen starten pas na een nieuw akkoord.
 
-## Fase 1: chatbot met Streamlit (huidige fase)
+## Fase 1: chatbot met Streamlit (bestaande basis)
 
 Doel: een werkende single-turn chatbot met GUI, als oefening en als basis voor de latere RAG-app.
 
@@ -60,14 +60,14 @@ LLM_MODEL=gemini-3.8-flash
 
 1. `python -m streamlit run src/rag_app/app.py` start en een vraag levert een gestreamd antwoord.
 2. `python -m ruff check .`, `python -m ruff format --check .`, `python -m mypy src` en `python -m pytest` slagen.
-3. Geen RAG-dependencies (torch, chromadb, sentence-transformers) geïnstalleerd of geïmporteerd.
+3. Geen RAG-dependencies in de standaardinstallatie of app-imports; de pilot blijft optioneel.
 4. Geen key of `.env` in de repo; `.env.example` bevat alleen placeholders.
 
 ## Status en beslissingen
 
 | Onderwerp | Beslissing | Fase |
 |---|---|---|
-| Huidige fase | 1: chatbot met Streamlit | vast |
+| Huidige fase | Fase 2, beperkt tot afspraken concretiseren en kleine proef | gestart |
 | Python | 3.12 in `.venv`; gekozen voor bredere dependency- en wheelondersteuning, ook voor de latere ML-stack; nooit de systeem-Python 3.9 | beide |
 | Package manager | `pip` in `.venv` (uv pas na overleg) | beide |
 | LLM fase 1 | Gemini Flash free tier via OpenAI-compatible endpoint | vast |
@@ -77,6 +77,9 @@ LLM_MODEL=gemini-3.8-flash
 | Vector DB | Chroma persistent; geen Qdrant of andere store | 2 |
 | PDF-parser | PyMuPDF | 2 |
 | Documenttypen | PDF, Markdown, TXT, DOCX, HTML | 2 |
+| Gesprekshistorie fase 2 | Maximaal de laatste 2 vraag-en-antwoordrondes mogen vervolgvragen verduidelijken; geschiedenis is geen bewijsbron | 2 |
+| Uploadlimiet | 25 MiB per bestand, 10 bestanden per batch, 100 geïndexeerde documenten, 500 MiB totale bronbestanden | 2 |
+| Kleine proef | 3 synthetische TXT-bestanden, 10 vragen, CPU-only, geen OpenAI-aanroep; meet retrieval voor/na reranking en geldigheid van bronverwijzingen | 2 |
 
 Een keuze wijzigen? Pas deze tabel aan in dezelfde commit en noem de reden.
 
@@ -91,7 +94,11 @@ Fase 1, minimaal houden:
 - `pydantic` + `pydantic-settings` voor config (leest `.env`)
 - `pytest`, `ruff`, `mypy` als dev-dependencies
 
-Pas in fase 2: `pymupdf`, `python-docx`, `beautifulsoup4`, `lxml`, `sentence-transformers`, `chromadb` en PyTorch.
+Pas in fase 2: `pymupdf`, `python-docx`, `beautifulsoup4`, `lxml`, `sentence-transformers`, `chromadb` en PyTorch. De optionele `rag-pilot` extra bevat alleen CPU-PyTorch, Sentence Transformers en Chroma; installeer die voor de proef met:
+
+```bash
+python -m pip install --extra-index-url https://download.pytorch.org/whl/cpu -e ".[rag-pilot,dev]"
+```
 
 Nieuwe dependency alleen toevoegen als de standaardbibliotheek of bestaande deps het niet redden; motiveer de keuze kort. Pin versies in `pyproject.toml`.
 
@@ -169,9 +176,9 @@ Vóór oplevering: `python -m ruff check .`, `python -m ruff format --check .`, 
 - Docstrings alleen waar gedrag niet vanzelf spreekt; comments in het Engels.
 - Houd `app.py` dun: UI rendert, `llm/client.py` en later `rag/pipeline.py` doen het werk.
 
-## Fase 2: RAG (later)
+## Fase 2: RAG (gestart: alleen stappen 1 en 2)
 
-Start dit pas na expliciete bevestiging. De keuzes hieronder zijn al vastgelegd.
+De gebruiker heeft fase 2 gestart, maar alleen de afsprakenconcretisering en de kleine proef zijn nu aan de beurt. Bouw geen loaders, app-pipeline of productie-RAG-componenten voordat de proef is besproken en de gebruiker akkoord geeft op vervolgstappen. De architectuurkeuzes hieronder zijn al vastgelegd.
 
 Flow: `document -> loader -> chunk -> BGE-M3 -> Chroma -> top-k -> BGE reranker -> gpt-4.1-mini -> antwoord met citaten`.
 
@@ -183,6 +190,23 @@ Flow: `document -> loader -> chunk -> BGE-M3 -> Chroma -> top-k -> BGE reranker 
 - `chromadb` als vectorstore
 
 Let op: `sentence-transformers` vereist PyTorch. Voor Python 3.14 zijn cp314-wheels beschikbaar (torch 2.15+, gecontroleerd). Bij installatieproblemen: meld het en overleg; wijk niet stil uit naar 3.9.
+
+### Kleine proef (stappen 1 en 2)
+
+- Corpus: de drie niet-vertrouwelijke, synthetische TXT-fixtures onder `tests/eval/phase2_pilot/`; evaluatieset: 10 vragen, inclusief vervolgvragen met gesprekshistorie.
+- Gebruik maximaal de laatste 4 berichten (2 vraag-en-antwoordrondes) als querycontext. Oudere geschiedenis mag niet in de query terechtkomen en mag nooit als bron voor feiten gelden.
+- Chunk de fixtures met de BGE-M3-tokenizer; embed met `normalize_embeddings=True`; indexeer embeddings expliciet in een tijdelijke Chroma-collectie met cosine-afstand.
+- Meet dense retrieval en reranking afzonderlijk; rapporteer hit-rate voor/na reranking op de relevante chunk en controleer dat elke gerapporteerde bronverwijzing uit opgehaalde chunks komt.
+- De proef doet geen generatie- of OpenAI-aanroepen. Synthetische gegevens blijven lokaal; Chroma-data staat in een tijdelijke directory en wordt na afloop verwijderd.
+- Voorlopig criterium: minimaal 8/10 verwachte chunks in de gererankte top 5 en alle bronverwijzingen geldig. Rapporteer ook model-download/opstart, index- en querytijd en piekgeheugen; beoordeel prestaties op deze machine voordat de rest van fase 2 start.
+- De proef staat los van de productiechunkgrootte: gebruik de afgesproken 512 tokens met 64 overlap en vermeld wanneer fixtures niet genoeg chunks opleveren voor een betekenisvolle top-5-meting.
+
+#### Uitkomst proef (2026-11-10)
+
+- 12 chunks uit 3 synthetische bestanden, 10 vragen: dense en gererankte hit@5 waren beide 10/10; de verwachte chunk stond telkens op rang 1. Alle 50 gerapporteerde chunk-ID's kwamen uit de opgehaalde kandidaten.
+- CPU-machine met 2 cores: piekgeheugen 2.0 GiB; eerste run duurde 227.6 s. Model laden duurde 63.2 s voor BGE-M3 en 61.4 s voor de reranker; dense retrieval voor 10 vragen duurde 3.8 s en reranking 60.1 s. De tijdelijke Chroma-index was 678 KiB.
+- De gedownloade modellen gebruiken samen circa 6.4 GiB in de lokale Hugging Face-cache. Die cache is behouden om volgende runs te versnellen.
+- Dit is een functionele sanity check, geen bewijs van kwaliteit op echte documenten. Reranking op deze CPU is traag voor interactieve inzet; bespreek hardware of optimalisatie voordat de volledige app wordt gebouwd. De gekozen reranker is niet gewijzigd.
 
 ### Loaders: vijf formaten
 
@@ -260,7 +284,7 @@ Let op: `sentence-transformers` vereist PyTorch. Voor Python 3.14 zijn cp314-whe
 
 ## Niet doen
 
-- Geen RAG-onderdelen, embeddings of vectorstore bouwen voordat fase 2 expliciet is gestart.
+- Geen productie-RAG-onderdelen, embeddings of vectorstore bouwen voordat de gebruiker akkoord geeft op vervolgstappen na de kleine proef.
 - Geen history meesturen in fase 1; single-turn is een bewuste keuze.
 - Geen LangChain als verplichte laag toevoegen zonder overleg; losse utilities mogen.
 - Geen Qdrant of andere vectorstore toevoegen; Chroma is de enige store.
@@ -274,5 +298,5 @@ Let op: `sentence-transformers` vereist PyTorch. Voor Python 3.14 zijn cp314-whe
 ## Openstaande punten
 
 - Exacte Flash-modelnaam voor `LLM_MODEL`: `gemini-3.8-flash` is de huidige stabiele modelnaam volgens de officiële Gemini OpenAI-compatibiliteitsdocumentatie (gecontroleerd 2026-11-10).
-- Of gesprekken bewaard moeten worden (nu: nee, alleen `session_state`).
-- Startmoment van fase 2.
+- Gesprekshistorie blijft alleen in `st.session_state`; fase 2 mag de laatste twee vraag-en-antwoordrondes gebruiken.
+- Vervolgbesluit na bespreking van de kleine proef: nog niet gegeven.
