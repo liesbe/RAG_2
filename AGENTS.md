@@ -80,6 +80,7 @@ LLM_MODEL=gemini-3.8-flash
 | Gesprekshistorie fase 2 | Maximaal de laatste 2 vraag-en-antwoordrondes mogen vervolgvragen verduidelijken; geschiedenis is geen bewijsbron | 2 |
 | Uploadlimiet | 25 MiB per bestand, 10 bestanden per batch, 100 geïndexeerde documenten, 500 MiB totale bronbestanden | 2 |
 | Kleine proef | 3 synthetische TXT-bestanden, 10 vragen, CPU-only, geen OpenAI-aanroep; meet retrieval voor/na reranking en geldigheid van bronverwijzingen | 2 |
+| Retrievalkwaliteit | Nog geen vaste scorethreshold of numeriek slaagcriterium; bepaal dit op basis van de evaluatieset, niet vooraf | 2 |
 
 Een keuze wijzigen? Pas deze tabel aan in dezelfde commit en noem de reden.
 
@@ -197,13 +198,14 @@ Let op: `sentence-transformers` vereist PyTorch. Voor Python 3.14 zijn cp314-whe
 - Gebruik maximaal de laatste 4 berichten (2 vraag-en-antwoordrondes) als querycontext. Oudere geschiedenis mag niet in de query terechtkomen en mag nooit als bron voor feiten gelden.
 - Chunk de fixtures met de BGE-M3-tokenizer; embed met `normalize_embeddings=True`; indexeer embeddings expliciet in een tijdelijke Chroma-collectie met cosine-afstand.
 - Meet dense retrieval en reranking afzonderlijk; rapporteer hit-rate voor/na reranking op de relevante chunk en controleer dat elke gerapporteerde bronverwijzing uit opgehaalde chunks komt.
+- Gebruik `top_k=20` en `top_n=5` als startwaarden. De evaluatieset is een eerste kwaliteitsmeting, geen vooraf vastgelegde acceptatiedrempel: kies een scorethreshold pas na beoordeling van de evaluatieresultaten.
 - De proef doet geen generatie- of OpenAI-aanroepen. Synthetische gegevens blijven lokaal; Chroma-data staat in een tijdelijke directory en wordt na afloop verwijderd.
-- Voorlopig criterium: minimaal 8/10 verwachte chunks in de gererankte top 5 en alle bronverwijzingen geldig. Rapporteer ook model-download/opstart, index- en querytijd en piekgeheugen; beoordeel prestaties op deze machine voordat de rest van fase 2 start.
+- Rapporteer model-download/opstart, index- en querytijd en piekgeheugen; beoordeel prestaties op deze machine voordat de rest van fase 2 start.
 - De proef staat los van de productiechunkgrootte: gebruik de afgesproken 512 tokens met 64 overlap en vermeld wanneer fixtures niet genoeg chunks opleveren voor een betekenisvolle top-5-meting.
 
 #### Uitkomst proef (2026-11-10)
 
-- 12 chunks uit 3 synthetische bestanden, 10 vragen: dense en gererankte hit@5 waren beide 10/10; de verwachte chunk stond telkens op rang 1. Alle 50 gerapporteerde chunk-ID's kwamen uit de opgehaalde kandidaten.
+- 12 chunks uit 3 synthetische bestanden, 10 vragen: dense en gererankte hit@5 waren beide 10/10; de verwachte chunk stond telkens op rang 1. Alle 50 gerapporteerde chunk-ID's kwamen uit de opgehaalde kandidaten. Dit is een baseline op synthetische data, geen vooraf afgesproken kwaliteitsgrens.
 - CPU-machine met 2 cores: piekgeheugen 2.0 GiB; eerste run duurde 227.6 s. Model laden duurde 63.2 s voor BGE-M3 en 61.4 s voor de reranker; dense retrieval voor 10 vragen duurde 3.8 s en reranking 60.1 s. De tijdelijke Chroma-index was 678 KiB.
 - De gedownloade modellen gebruiken samen circa 6.4 GiB in de lokale Hugging Face-cache. Die cache is behouden om volgende runs te versnellen.
 - Dit is een functionele sanity check, geen bewijs van kwaliteit op echte documenten. Reranking op deze CPU is traag voor interactieve inzet; bespreek hardware of optimalisatie voordat de volledige app wordt gebouwd. De gekozen reranker is niet gewijzigd.
@@ -240,12 +242,13 @@ Let op: `sentence-transformers` vereist PyTorch. Voor Python 3.14 zijn cp314-whe
 ```
 
 - Gebruik `chunk_id = f"{doc_id}:{chunk_index}"` als ID in Chroma.
-- Herindexeren is idempotent: zelfde `doc_id` + `chunk_index` upsert. Is `content_hash` gewijzigd, verwijder dan eerst alle chunks van dat `doc_id` en upsert daarna de nieuwe set — geen wees-chunks. Vergelijk alleen `content_hash`, niet `ingested_at`.
+- Herindexeren is idempotent: dezelfde set `doc_id` + `chunk_index` en `content_hash` levert geen duplicaten op. Vergelijk alleen `content_hash`, niet `ingested_at`. Als de set chunks of een `content_hash` verandert, verwijder dan eerst alle bestaande chunks voor dat `doc_id` en upsert daarna de volledige nieuwe set; zo blijven bij gewijzigde of kortere documenten geen verouderde chunks achter.
 - Chunken op tokens met de BGE-M3-tokenizer, niet op tekens. Startwaarden: 512 tokens per chunk, 64 overlap; configureerbaar via `Settings` en nooit boven de modelcontext.
 - BGE-M3: dense embeddings, `normalize_embeddings=True`, batched, één modelinstantie per proces. Gebruik geen sparse- of ColBERT-output.
 - Chroma: `PersistentClient` op `data/chroma`, cosine-afstand, embeddings expliciet meegeven (Chroma embedt niet zelf). Zet afstand om naar similarity (`1 - distance`) zodat "hoger = beter" geldt.
-- Retrieval: haal `top_k` (start 20) op, rerank met BGE, houd `top_n` (start 5) over. Pas daarna de drempel toe op de rerank-score; normaliseer die met sigmoid.
+- Retrieval: haal `top_k` (start 20) op, rerank met BGE, houd `top_n` (start 5) over. Normaliseer de rerank-score met sigmoid en pas daarna een scorethreshold toe. De threshold wordt pas na evaluatie vastgesteld; er is vooraf geen numeriek kwaliteits- of slaagcriterium.
 - Retrieval retourneert altijd bronnen, scores en metadata; nooit alleen tekst.
+- Bewaar bronbestanden uitsluitend onder `data/uploads/` en de Chroma-index onder `data/chroma/`. Limieten: 25 MiB per bestand, 10 bestanden per uploadbatch, maximaal 100 geïndexeerde documenten en maximaal 500 MiB aan totale bronbestanden.
 
 **Query:** `embed -> retrieve(top_k) -> rerank(top_n) -> prompt -> answer`
 
