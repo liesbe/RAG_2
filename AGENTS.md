@@ -23,7 +23,7 @@ Alles via `.env` (nooit committen) en `Settings`:
 ```env
 LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
 LLM_API_KEY=...
-LLM_MODEL=gemini-3.5-flash
+LLM_MODEL=gemini-3.8-flash
 ```
 
 - `LLM_MODEL` is de enige plek waar een modelnaam staat; de code bevat geen model-default buiten `Settings`. Controleer in AI Studio welk Flash-model actueel is en pas indien nodig alleen deze variabele aan.
@@ -273,6 +273,6 @@ Let op: `sentence-transformers` vereist PyTorch. Voor Python 3.14 zijn cp314-whe
 
 ## Openstaande punten
 
-- Exacte Flash-modelnaam voor `LLM_MODEL`: `gemini-3.5-flash` werkt; `gemini-flash-latest` gaf tijdelijk 503. Controleer bij hapering AI Studio.
+- Exacte Flash-modelnaam voor `LLM_MODEL`: `gemini-3.8-flash` is de huidige stabiele modelnaam volgens de officiële Gemini OpenAI-compatibiliteitsdocumentatie (gecontroleerd 2026-11-10).
 - Of gesprekken bewaard moeten worden (nu: nee, alleen `session_state`).
 - Startmoment van fase 2.

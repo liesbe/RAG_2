@@ -60,7 +60,8 @@ def main() -> None:
     client = _get_client()
     with st.chat_message("assistant"):
         try:
-            reply = st.write_stream(client.stream_reply(prompt))
+            with st.spinner("Antwoord wordt gegenereerd..."):
+                reply = st.write_stream(client.stream_reply(prompt))
         except LLMError as exc:
             st.error(str(exc))
             return

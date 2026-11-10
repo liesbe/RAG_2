@@ -9,7 +9,7 @@ from rag_app.config import Settings
 def test_settings_use_documented_defaults() -> None:
     settings = Settings(_env_file=None, llm_api_key="test-key")
 
-    assert settings.llm_model == "gemini-3.5-flash"
+    assert settings.llm_model == "gemini-3.8-flash"
     assert settings.llm_max_output_tokens == 1024
     assert settings.llm_temperature == 0.7
     assert settings.llm_timeout_seconds == 30.0

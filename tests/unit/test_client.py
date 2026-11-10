@@ -55,7 +55,7 @@ def test_stream_reply_streams_text_and_sends_only_the_current_question() -> None
     kwargs = mock.chat.completions.create.call_args.kwargs
     assert kwargs["messages"] == build_messages("Hoi")
     assert len(kwargs["messages"]) == 2
-    assert kwargs["model"] == "gemini-3.5-flash"
+    assert kwargs["model"] == "gemini-3.8-flash"
     assert kwargs["max_tokens"] == 1024
     assert kwargs["temperature"] == 0.7
     assert kwargs["stream"] is True
@@ -119,13 +119,13 @@ def test_map_server_error_is_friendly() -> None:
     assert "storing" in str(mapped)
 
 
-def test_map_503_reports_overload() -> None:
+def test_map_503_reports_provider_outage() -> None:
     exc = InternalServerError("overloaded", response=_response(503), body=None)
 
     mapped = map_error(exc, 30.0)
 
     assert mapped is not None
-    assert "overbelast" in str(mapped)
+    assert str(mapped) == "De provider heeft een storing. Probeer het later opnieuw."
 
 
 def test_map_other_status_error_includes_status_code() -> None:
@@ -141,7 +141,8 @@ def test_map_unknown_error_returns_none() -> None:
     assert map_error(ValueError("something else"), 30.0) is None
 
 
-def test_stream_reply_converts_provider_errors() -> None:
+def test_stream_reply_converts_provider_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("rag_app.llm.client.time.sleep", lambda _: None)
     mock = _mock_client()
     mock.chat.completions.create.side_effect = RateLimitError(
         "rate limited",
@@ -152,3 +153,28 @@ def test_stream_reply_converts_provider_errors() -> None:
 
     with pytest.raises(LLMError, match="Limiet bereikt"):
         list(client.stream_reply("Hoi"))
+    assert mock.chat.completions.create.call_count == 3
+
+
+def test_stream_reply_retries_provider_status_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("rag_app.llm.client.time.sleep", lambda _: None)
+    mock = _mock_client()
+    mock.chat.completions.create.side_effect = [
+        InternalServerError("temporary failure", response=_response(503), body=None),
+        iter([_chunk("Hallo")]),
+    ]
+    client = LLMClient(_settings(), client=cast(OpenAI, mock))
+
+    assert "".join(client.stream_reply("Hoi")) == "Hallo"
+    assert mock.chat.completions.create.call_count == 2
+
+
+def test_stream_reply_does_not_retry_timeout() -> None:
+    mock = _mock_client()
+    mock.chat.completions.create.side_effect = APITimeoutError(_response(200).request)
+    client = LLMClient(_settings(), client=cast(OpenAI, mock))
+
+    with pytest.raises(LLMError, match="Geen antwoord binnen 30 seconden"):
+        list(client.stream_reply("Hoi"))
+
+    assert mock.chat.completions.create.call_count == 1

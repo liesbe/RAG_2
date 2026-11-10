@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     llm_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
     llm_api_key: SecretStr = SecretStr("")
-    llm_model: str = "gemini-3.5-flash"
+    llm_model: str = "gemini-3.8-flash"
 
     llm_max_output_tokens: int = Field(default=1024, ge=1, le=8192)
     llm_temperature: float = Field(default=0.7, ge=0.0, le=2.0)
