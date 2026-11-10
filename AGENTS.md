@@ -68,7 +68,7 @@ LLM_MODEL=gemini-3.5-flash
 | Onderwerp | Beslissing | Fase |
 |---|---|---|
 | Huidige fase | 1: chatbot met Streamlit | vast |
-| Python | 3.14 in `.venv`; nooit de systeem-Python 3.9 | beide |
+| Python | 3.12 in `.venv`; gekozen voor bredere dependency- en wheelondersteuning, ook voor de latere ML-stack; nooit de systeem-Python 3.9 | beide |
 | Package manager | `pip` in `.venv` (uv pas na overleg) | beide |
 | LLM fase 1 | Gemini Flash free tier via OpenAI-compatible endpoint | vast |
 | LLM fase 2 | OpenAI `gpt-4.1-mini` | vast |
@@ -84,8 +84,8 @@ Een keuze wijzigen? Pas deze tabel aan in dezelfde commit en noem de reden.
 
 Fase 1, minimaal houden:
 
-- Python 3.14, volledig type-hinted
-- `.venv` in de projectmap, aangemaakt met `py -3.14 -m venv .venv`
+- Python 3.12, volledig type-hinted
+- `.venv` in de projectmap, aangemaakt met `py -3.12 -m venv .venv` op Windows of `python3.12 -m venv .venv` op Linux
 - `streamlit` voor de UI
 - `openai` als client voor elk OpenAI-compatible endpoint
 - `pydantic` + `pydantic-settings` voor config (leest `.env`)
@@ -132,10 +132,11 @@ Bestandsnamen in het Engels, UI-teksten in het Nederlands (tenzij anders gevraag
 
 ## Commands
 
-Gebruik altijd de venv. De systeem-`python` is 3.9 en hoort niet bij dit project.
+Gebruik altijd de venv. De systeem-`python` is 3.9 en hoort niet bij dit project. Maak de venv met Python 3.12: `py -3.12` op Windows of `python3.12` op Linux.
 
 ```powershell
 .\.venv\Scripts\Activate.ps1              # activeren (PowerShell)
+py -3.12 -m venv .venv                    # alleen bij eerste setup
 python -m pip install -e ".[dev]"         # zodra pyproject.toml bestaat
 python -m streamlit run src/rag_app/app.py
 python -m pytest

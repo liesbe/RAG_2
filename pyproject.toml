@@ -7,7 +7,7 @@ name = "rag-project"
 version = "0.1.0"
 description = "Oefenproject: single-turn chatbot met Streamlit, later een RAG-assistent."
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "openai>=1.60",
     "pydantic>=2.9",
@@ -34,14 +34,14 @@ markers = [
 
 [tool.ruff]
 line-length = 100
-target-version = "py314"
+target-version = "py312"
 extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 
 [tool.mypy]
-python_version = "3.14"
+python_version = "3.12"
 disallow_untyped_defs = true
 check_untyped_defs = true
 no_implicit_optional = true

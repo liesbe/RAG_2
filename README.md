@@ -7,6 +7,7 @@ De RAG-pipeline volgt in fase 2. Zie `AGENTS.md` voor de volledige afspraken.
 ## Setup
 
 ```powershell
+py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
 Copy-Item .env.example .env
@@ -17,6 +18,7 @@ python -m streamlit run src/rag_app/app.py
 Zonder activeren:
 
 ```powershell
+py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e ".[dev]"
 .\.venv\Scripts\python.exe -m streamlit run src/rag_app/app.py
 ```
