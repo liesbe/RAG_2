@@ -4,17 +4,26 @@ from __future__ import annotations
 
 import streamlit as st
 from pydantic import ValidationError
+from streamlit.errors import StreamlitSecretNotFoundError
 
-from rag_app.config import get_settings
+from rag_app.config import Settings, get_settings_with_api_key_fallback
 from rag_app.llm.client import LLMClient, LLMError
 
 st.set_page_config(page_title="RAG Project - Chatbot", page_icon="💬", layout="centered")
 
 
+def _load_settings() -> Settings:
+    try:
+        api_key = st.secrets["LLM_API_KEY"]
+    except (KeyError, StreamlitSecretNotFoundError):
+        api_key = None
+    return get_settings_with_api_key_fallback(api_key)
+
+
 @st.cache_resource
 def _get_client() -> LLMClient:
     """Create one client for the lifetime of the Streamlit process."""
-    return LLMClient(get_settings())
+    return LLMClient(_load_settings())
 
 
 def _render_history() -> None:
@@ -25,11 +34,11 @@ def _render_history() -> None:
 
 def main() -> None:
     try:
-        settings = get_settings()
+        settings = _load_settings()
     except ValidationError:
         st.error(
             "Configuratie ontbreekt of is ongeldig. "
-            "Kopieer `.env.example` naar `.env` en vul `LLM_API_KEY` in."
+            "Controleer `LLM_API_KEY` in `.env` of Streamlit Cloud Secrets."
         )
         st.stop()
 

@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from rag_app.config import Settings
+from rag_app.config import Settings, get_settings, get_settings_with_api_key_fallback
 
 
 def test_settings_use_documented_defaults() -> None:
@@ -22,6 +22,18 @@ def test_settings_require_an_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
 
     with pytest.raises(ValidationError):
         Settings(_env_file=None)
+
+
+def test_settings_use_hosted_api_key_when_environment_key_is_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("LLM_API_KEY", raising=False)
+    get_settings.cache_clear()
+
+    settings = get_settings_with_api_key_fallback("cloud-test-key")
+
+    assert settings.llm_api_key.get_secret_value() == "cloud-test-key"
+    get_settings.cache_clear()
 
 
 def test_settings_reject_invalid_token_limit() -> None:

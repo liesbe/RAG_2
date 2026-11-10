@@ -3,7 +3,7 @@
 from functools import lru_cache
 from typing import Self
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import Field, SecretStr, ValidationError, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -38,3 +38,13 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Return the cached settings instance."""
     return Settings()
+
+
+def get_settings_with_api_key_fallback(api_key: str | None) -> Settings:
+    """Load settings from the environment, falling back to a hosted app secret."""
+    try:
+        return get_settings()
+    except ValidationError:
+        if api_key is None:
+            raise
+        return Settings(llm_api_key=SecretStr(api_key))
