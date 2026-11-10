@@ -11,6 +11,21 @@ from rag_app.llm.client import LLMClient, LLMError
 
 st.set_page_config(page_title="RAG Project - Chatbot", page_icon="💬", layout="centered")
 
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #eaf3f8;
+    }
+
+    section[data-testid="stSidebar"] {
+        background-color: #dceaf2;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 
 def _load_settings() -> Settings:
     try:
