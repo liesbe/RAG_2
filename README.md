@@ -6,6 +6,16 @@ De RAG-pipeline volgt in fase 2. Zie `AGENTS.md` voor de volledige afspraken.
 
 ## Setup
 
+### GitHub Codespaces
+
+De devcontainer gebruikt Python 3.12, maakt `.venv` aan en installeert het project met de
+ontwikkelafhankelijkheden wanneer de container wordt aangemaakt of opnieuw gebouwd. VS Code en de
+automatisch gestarte app gebruiken die omgeving. Voer na wijzigingen aan
+`.devcontainer/devcontainer.json` **Codespaces: Rebuild Container** uit om de configuratie toe te
+passen.
+
+### Lokale setup (Windows)
+
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
