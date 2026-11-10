@@ -205,8 +205,8 @@ Let op: `sentence-transformers` vereist PyTorch. Voor Python 3.14 zijn cp314-whe
 
 #### Uitkomst proef (2026-11-10)
 
-- 12 chunks uit 3 synthetische bestanden, 10 vragen: dense en gererankte hit@5 waren beide 10/10; de verwachte chunk stond telkens op rang 1. Alle 50 gerapporteerde chunk-ID's kwamen uit de opgehaalde kandidaten. Dit is een baseline op synthetische data, geen vooraf afgesproken kwaliteitsgrens.
-- CPU-machine met 2 cores: piekgeheugen 2.0 GiB; eerste run duurde 227.6 s. Model laden duurde 63.2 s voor BGE-M3 en 61.4 s voor de reranker; dense retrieval voor 10 vragen duurde 3.8 s en reranking 60.1 s. De tijdelijke Chroma-index was 678 KiB.
+- 12 chunks uit 3 synthetische bestanden, 10 vragen, `top_k=20` (12 kandidaten beschikbaar), `top_n=5`: dense en gererankte hit@5 waren beide 10/10; de verwachte chunk stond telkens op rang 1. Alle 50 gerapporteerde chunk-ID's kwamen uit de opgehaalde kandidaten. Dit is een baseline op synthetische data, geen vooraf afgesproken kwaliteitsgrens.
+- CPU-run: eerste run 216.3 s (BGE-M3 laden 64.6 s, embedding/index 28.5 s, dense retrieval 5.6 s, reranker laden 48.7 s, reranking 68.9 s); warme herhaling 95.5 s. Piek-RSS bij de herhaling was 1998.6 MiB; tijdelijke Chroma-index 678.2 KiB.
 - De gedownloade modellen gebruiken samen circa 6.4 GiB in de lokale Hugging Face-cache. Die cache is behouden om volgende runs te versnellen.
 - Dit is een functionele sanity check, geen bewijs van kwaliteit op echte documenten. Reranking op deze CPU is traag voor interactieve inzet; bespreek hardware of optimalisatie voordat de volledige app wordt gebouwd. De gekozen reranker is niet gewijzigd.
 

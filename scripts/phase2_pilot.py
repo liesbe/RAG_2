@@ -223,6 +223,8 @@ def main() -> None:
 
     print(f"Embedding model load: {embedding_loaded_at - started:.1f}s")
     print(f"Chunks indexed: {len(chunks)}")
+    print(f"Dense top_k: {TOP_K} (available chunks: {len(chunks)})")
+    print(f"Reranked top_n: {TOP_N}")
     print(f"Embedding + index: {collection_ready_at - embedding_loaded_at:.1f}s")
     print(
         f"Dense retrieval ({len(questions)} questions): "
